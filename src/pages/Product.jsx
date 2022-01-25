@@ -4,6 +4,10 @@ import Announcement from "../components/Announcement";
 import Newsletter from "../components/Newsletter";
 import Footer from "../components/Footer";
 import {Add, Remove} from "@material-ui/icons";
+import { useLocation } from "react-router";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { publicRequest } from "../requestMethods";
 
 const Container = styled.div`
     
@@ -115,43 +119,70 @@ const Button = styled.button`
 
 
 const Product = () => {
+  const location = useLocation();
+  const id = location.pathname.split("/")[2];
+  const [product, setProduct] = useState({});
+  const [quantity, setQuantity] = useState(1);
+  const [color, setColor] = useState("");
+  const [size, setSize] = useState("");
+
+  useEffect(() => {
+    const getProduct = async () => {
+      try {
+        const response = await publicRequest.get(`/products/find/${id}`);
+
+        setProduct(response.data);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    getProduct();
+  }, [id]);
+
+  const handleQuantity = (type) => {
+    if(type === "dec") {
+      quantity > 1 && setQuantity(quantity - 1);
+    } else {
+      setQuantity(quantity + 1);
+    }
+  }
+
     return (
         <Container>
             <NavBar />
             <Announcement />
             <Wrapper>
                 <ImgContainer>
-                    <Image src="https://i.ibb.co/S6qMxwr/jean.jpg" />
+                    <Image src={product.image} />
                 </ImgContainer>
                 <InfoContainer>
-                    <Title>Denim Jumpsuit</Title>
+                    <Title>{product.title}</Title>
                     <Description>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec venenatis, dolor in finibus malesuada, lectus ipsum porta nunc, at iaculis arcu nisi sed mauris. Nulla fermentum vestibulum ex, eget tristique tortor pretium ut. Curabitur elit justo, consequat id condimentum ac, volutpat ornare.
+                        {product.description}
                     </Description>
-                    <Price>$20</Price>
+                    <Price>$ {product.price}</Price>
                     <FilterContainer>
                         <Filter>
                             <FilterTitle>Color</FilterTitle>
-                            <FilterColor color="black" />
-                            <FilterColor color="darkblue" />
-                            <FilterColor color="gray" />
+                            {product.color?.map(color => (
+                              <FilterColor key={color} color={color} onClick={() => setColor(color)} />
+                            ))}
                         </Filter>
                         <Filter>
                             <FilterTitle>Size</FilterTitle>
-                            <FilterSize>
-                                <FilterSizeOption>XS</FilterSizeOption>
-                                <FilterSizeOption>S</FilterSizeOption>
-                                <FilterSizeOption>M</FilterSizeOption>
-                                <FilterSizeOption>L</FilterSizeOption>
-                                <FilterSizeOption>XL</FilterSizeOption>
+                            <FilterSize onChange={(event) => setSize(event.target.value)}>
+                                { product.size?.map(size => (
+                                  <FilterSizeOption key={size}>{size}</FilterSizeOption>
+                                )) }
                             </FilterSize>
                         </Filter>
                     </FilterContainer>
                     <AddContainer>
                         <AmountContainer>
-                            <Remove />
-                            <Amount>1</Amount>
-                            <Add />
+                            <Remove onClick={() => handleQuantity("dec")} />
+                            <Amount>{quantity}</Amount>
+                            <Add onClick={() => handleQuantity("inc")} />
                         </AmountContainer>
                         <Button>ADD TO CART</Button>
                     </AddContainer>
