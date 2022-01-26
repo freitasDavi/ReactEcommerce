@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { login } from "../redux/apiCalls";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 
 const Container = styled.div`
   width: 100vw;
@@ -67,12 +68,17 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
-  const { isFetching, error } = useSelector((state) => state.user);
+  const { isFetching, error, currentUser } = useSelector((state) => state.user);
+  const navigate = useNavigate();
 
   const handleLogin = (event) => {
     event.preventDefault();
 
     login(dispatch, { username, password });
+
+    if(currentUser) {
+      navigate("/");
+    }
   }
 
     return (
