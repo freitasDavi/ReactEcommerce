@@ -3,6 +3,14 @@ import NavBar from "../components/Navbar";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import {Add, Remove} from "@material-ui/icons";
+import { useSelector } from "react-redux";
+import StripeCheckout from "react-stripe-checkout";
+import { useState } from "react";
+import { useEffect } from "react";
+import { userRequest } from "../requestMethods";
+import { useNavigate } from "react-router";
+
+const KEY = process.env.REACT_APP_STRIPE;
 
 const Container = styled.div`
 `
@@ -146,6 +154,38 @@ const SummaryButton = styled.button`
 
 
 const Cart = () => {
+  const cart = useSelector(state => state.cart);
+  const [stripeToken, setStripeToken] = useState(null);
+  const navigate = useNavigate();
+
+  const onToken = (token) => {
+    setStripeToken(token);
+  }
+
+  useEffect(() => {
+    const makeRequest = async () => {
+      try {
+        const response = await userRequest.post("/checkout/payment", {
+          tokenId: stripeToken.id,
+          amount: cart.total * 100
+        });
+
+        navigate("/success", 
+          { state: 
+            { 
+              data: response.data,
+              products: cart,
+            } 
+          }
+        );
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    stripeToken && cart.total >= 1 && makeRequest();
+  }, [stripeToken, navigate, cart]);
+
     return (
         <Container>
             <NavBar />
@@ -162,51 +202,34 @@ const Cart = () => {
                 </Top>
                 <Bottom>
                     <Info>
-                        <Product>
+                        {cart.products.map(product => (
+                          <Product>
                             <ProductDetail>
-                                <Image src="https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A" />
+                                <Image src={product.image} />
                                 <Details>
-                                    <ProductName><b>Product: </b>ADIDAS THUNDER SHOES</ProductName>
-                                    <ProductId><b>ID: </b> 93813718293</ProductId>
-                                    <ProductColor color="black" />
-                                    <ProductSize><b>Size: </b> 37.5</ProductSize>
+                                    <ProductName><b>Product: </b>{ product.title }</ProductName>
+                                    <ProductId><b>ID: </b> {product._id}</ProductId>
+                                    <ProductColor color={product.color} />
+                                    <ProductSize><b>Size: </b>{product.size}</ProductSize>
                                 </Details>
                             </ProductDetail>
                             <PriceDetails>
                                 <ProductAmountContainer>
                                     <Add />
-                                    <ProductAmount>2</ProductAmount>
+                                    <ProductAmount>{product.quantity}</ProductAmount>
                                     <Remove />
                                 </ProductAmountContainer>
-                                <ProductPrice>$ 30</ProductPrice>
+                                <ProductPrice>$ {product.price * product.quantity}</ProductPrice>
                             </PriceDetails>
-                        </Product>
+                          </Product>
+                        ))}
                         <Hr />
-                        <Product>
-                            <ProductDetail>
-                                <Image src="https://i.pinimg.com/originals/2d/af/f8/2daff8e0823e51dd752704a47d5b795c.png" />
-                                <Details>
-                                    <ProductName><b>Product: </b>CAMISETA BALA</ProductName>
-                                    <ProductId><b>ID: </b> 938137182221421</ProductId>
-                                    <ProductColor color="gray" />
-                                    <ProductSize><b>Size: </b> G</ProductSize>
-                                </Details>
-                            </ProductDetail>
-                            <PriceDetails>
-                                <ProductAmountContainer>
-                                    <Add />
-                                    <ProductAmount>2</ProductAmount>
-                                    <Remove />
-                                </ProductAmountContainer>
-                                <ProductPrice>$ 20</ProductPrice>
-                            </PriceDetails>
-                        </Product>
                     </Info>
                     <Summary>
                         <SummaryTitle>ORDER SUMMARY</SummaryTitle>
                         <SummaryItem>
                             <SummaryItemText>Subtotal</SummaryItemText>
-                            <SumaryItemPrice>$ 100</SumaryItemPrice>
+                            <SumaryItemPrice>$ {cart.total}</SumaryItemPrice>
                         </SummaryItem>
                         <SummaryItem>
                             <SummaryItemText>Estimated Shipping</SummaryItemText>
@@ -218,9 +241,21 @@ const Cart = () => {
                         </SummaryItem>
                         <SummaryItem type="total">
                             <SummaryItemText >Total</SummaryItemText>
-                            <SumaryItemPrice>$ 100</SumaryItemPrice>
+                            <SumaryItemPrice>$ {cart.total}</SumaryItemPrice>
                         </SummaryItem>
-                        <SummaryButton>CHECKOUT NOW</SummaryButton>
+                        {/* <SummaryButton>CHECKOUT NOW</SummaryButton> */}
+                        <StripeCheckout
+                          name="Lama shop"
+                          image="https://avatars.githubusercontent.com/u/1486366?v=4"
+                          billingAddress
+                          shippingAddress
+                          description={`Your total is ${cart.total}`}
+                          amount={cart.total * 100}
+                          token={onToken}
+                          stripeKey={KEY}  
+                        >
+                          <SummaryButton>CHECKOUT NOW</SummaryButton>
+                        </StripeCheckout>
                     </Summary>
                 </Bottom>
             </Wrapper>

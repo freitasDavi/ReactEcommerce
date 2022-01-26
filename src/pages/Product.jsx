@@ -8,6 +8,8 @@ import { useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { publicRequest } from "../requestMethods";
+import { addProduct } from "../redux/cartRedux";
+import { useDispatch } from "react-redux";
 
 const Container = styled.div`
     
@@ -125,6 +127,7 @@ const Product = () => {
   const [quantity, setQuantity] = useState(1);
   const [color, setColor] = useState("");
   const [size, setSize] = useState("");
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const getProduct = async () => {
@@ -147,6 +150,10 @@ const Product = () => {
       setQuantity(quantity + 1);
     }
   }
+
+  const handleCart = () => {
+    dispatch(addProduct({ ...product, quantity, color, size }));
+  };
 
     return (
         <Container>
@@ -184,7 +191,7 @@ const Product = () => {
                             <Amount>{quantity}</Amount>
                             <Add onClick={() => handleQuantity("inc")} />
                         </AmountContainer>
-                        <Button>ADD TO CART</Button>
+                        <Button onClick={handleCart}>ADD TO CART</Button>
                     </AddContainer>
                 </InfoContainer>
             </Wrapper>
